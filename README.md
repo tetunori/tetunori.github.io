@@ -1,2 +1,0 @@
-# tetunori.github.io
-
