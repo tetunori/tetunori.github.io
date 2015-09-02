@@ -20,6 +20,7 @@ new (function() {
         $.ajax( url, { crossDomain: true, type: "POST", dataType: 'text',
                      data: JSON.stringify( ir_data ) ,
           success: function(result){
+            callback();
           }
         });
     };
@@ -30,11 +31,12 @@ new (function() {
         $.ajax( url, { crossDomain: true, type: "POST", dataType: 'text',
                      data: JSON.stringify( ir_data ) ,
           success: function(result){
+            callback();
           }
         });
     };
 
-    ext.setIPAddr = function(ipaddr, callback) {
+    ext.setIPAddr = function(ipaddr) {
         ip_addr = ipaddr;
     };
 
