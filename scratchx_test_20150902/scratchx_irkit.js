@@ -36,6 +36,26 @@ new (function() {
         });
     };
 
+    ext.sendIRCommand = function(ir_data, callback) {
+        var url = 'http://'+ip_addr+'/messages';
+        $.ajax( url, { crossDomain: true, type: "POST", dataType: 'text',
+                     data: JSON.stringify( ir_data ) ,
+          success: function(result){
+            callback();
+          }
+        });
+    };
+
+    ext.getIRCode = function() {
+        var url = 'http://'+ip_addr+'/messages';
+        $.ajax( url, { crossDomain: true, type: "GET", dataType: 'text',
+                     data: JSON.stringify( ir_data ) ,
+          success: function( ir_data ){
+            callback( ir_data );
+          }
+        });
+    };
+
     ext.setIPAddr = function(ipaddr) {
         ip_addr = ipaddr;
     };
@@ -45,6 +65,8 @@ new (function() {
         blocks: [
           ['w', 'Turn the Light OFF!', 'turnOffLight'],
           ['w', 'Turn the Light ON!', 'turnOnLight'],
+          ['w', 'Send IR Command : %s', 'sendIRCommand', 'IR Code'],
+          ['r', 'Get IR Code', 'getIRCode'],
           [' ', 'Set IRKit IP Address : %s', 'setIPAddr', '192.168.10.2'],
         ]
     };
