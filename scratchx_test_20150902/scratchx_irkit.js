@@ -3,7 +3,7 @@
 
 new (function() {
     var ext = this;
-    var ip_addr = '192.168.10.2';
+    var irkit_ip_addr = '192.168.10.2';
 
     // Cleanup function when the extension is unloaded
     ext._shutdown = function() {};
@@ -14,40 +14,20 @@ new (function() {
         return {status: 2, msg: 'Ready'};
     };
 
-    ext.turnOnLight = function(callback) {
-        var ir_data = '{"format":"raw","freq":38,"data":[6881,3341,873,873,873,873,873,2537,873,2537,873,873,873,2537,873,873,873,873,873,873,873,2537,873,873,873,873,873,2537,873,873,873,2537,873,873,873,2537,873,873,873,873,873,2537,873,873,873,873,873,873,873,873,873,873,873,873,873,2537,873,873,873,2537,873,2537,873,873,873,873,873,2537,873,873,873,2537,873,2537,873,2537,873,2537,873,873,873,873,873,65535,0,65535,0,19315,6881,3341,873,873,873,873,873,2537,873,2537,873,873,873,2537,873,873,873,873,873,873,873,2537,873,873,873,873,873,2537,873,873,873,2537,873,873,873,2537,873,873,873,873,873,2537,873,873,873,873,873,873,873,873,873,873,873,873,873,2537,873,873,873,2537,873,2537,873,873,873,873,873,2537,873,873,873,2537,873,2537,873,2537,873,2537,873,873,873,873,873]}';
-        var url = 'http://'+ip_addr+'/messages';
+    // Send IR Data to IRKit and request IRKit emit it.
+    ext.sendIRCommand = function( ir_data, callback ) {
+        var url = 'http://'+irkit_ip_addr+'/messages';
         $.ajax( url, { crossDomain: true, type: "POST", dataType: 'text',
                      data: JSON.stringify( ir_data ) ,
-          success: function(result){
+          success: function( result ){
             callback();
           }
         });
     };
 
-    ext.turnOffLight = function(callback) {
-        var ir_data = '{"format":"raw","freq":38,"data":[6881,3458,815,904,815,904,815,2626,815,2626,815,904,815,2626,815,904,815,904,815,904,815,2626,815,904,815,904,815,2626,815,904,815,2626,815,904,815,2626,815,904,815,904,815,2626,815,904,815,904,815,904,815,904,815,2626,815,2626,815,2626,815,904,815,2626,815,2626,815,904,815,904,815,904,815,2626,815,2626,815,2626,815,2626,815,2626,815,904,815,904,815,65535,0,65535,0,19315,6881,3458,815,904,815,904,815,2626,815,2626,815,904,815,2626,815,904,815,904,815,904,815,2626,815,904,815,904,815,2626,815,904,815,2626,815,904,815,2626,815,904,815,904,815,2626,815,904,815,904,815,904,815,904,815,2626,815,2626,815,2626,815,904,815,2626,815,2626,815,904,815,904,815,904,815,2626,815,2626,815,2626,815,2626,815,2626,815,904,815,904,815]}';
-        var url = 'http://'+ip_addr+'/messages';
-        $.ajax( url, { crossDomain: true, type: "POST", dataType: 'text',
-                     data: JSON.stringify( ir_data ) ,
-          success: function(result){
-            callback();
-          }
-        });
-    };
-
-    ext.sendIRCommand = function(ir_data, callback) {
-        var url = 'http://'+ip_addr+'/messages';
-        $.ajax( url, { crossDomain: true, type: "POST", dataType: 'text',
-                     data: JSON.stringify( ir_data ) ,
-          success: function(result){
-            callback();
-          }
-        });
-    };
-
+    // Get a learned IR Code from IRKit.
     ext.getIRCode = function( callback ) {
-        var url = 'http://'+ip_addr+'/messages';
+        var url = 'http://'+irkit_ip_addr+'/messages';
         $.ajax( url, { crossDomain: true, type: "GET", dataType: 'text',
           success: function( ir_data ){
             callback( ir_data );
@@ -55,15 +35,14 @@ new (function() {
         });
     };
 
-    ext.setIPAddr = function(ipaddr) {
-        ip_addr = ipaddr;
+    // Set IP Address of IRKit.
+    ext.setIPAddr = function( ip_addr ) {
+        irkit_ip_addr = ip_addr;
     };
 
     // Block and block menu descriptions
     var descriptor = {
         blocks: [
-          ['w', 'Turn the Light OFF!', 'turnOffLight'],
-          ['w', 'Turn the Light ON!', 'turnOnLight'],
           ['w', 'Send IR Command : %s', 'sendIRCommand', 'IR Code'],
           ['R', 'Get IR Code', 'getIRCode'],
           [' ', 'Set IRKit IP Address : %s', 'setIPAddr', '192.168.10.2'],
