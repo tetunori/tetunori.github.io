@@ -46,7 +46,7 @@ new (function() {
         });
     };
 
-    ext.getIRCode = function() {
+    ext.getIRCode = function( callback ) {
         var url = 'http://'+ip_addr+'/messages';
         $.ajax( url, { crossDomain: true, type: "GET", dataType: 'text',
           success: function( ir_data ){
@@ -65,7 +65,7 @@ new (function() {
           ['w', 'Turn the Light OFF!', 'turnOffLight'],
           ['w', 'Turn the Light ON!', 'turnOnLight'],
           ['w', 'Send IR Command : %s', 'sendIRCommand', 'IR Code'],
-          ['r', 'Get IR Code', 'getIRCode'],
+          ['R', 'Get IR Code', 'getIRCode'],
           [' ', 'Set IRKit IP Address : %s', 'setIPAddr', '192.168.10.2'],
         ]
     };
