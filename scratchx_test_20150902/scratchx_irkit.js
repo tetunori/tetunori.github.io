@@ -50,5 +50,5 @@ new (function() {
     };
 
     // Register the extension
-    ScratchExtensions.register('IRKit extension', descriptor, ext);
+    ScratchExtensions.register('IRKit test extension', descriptor, ext);
 })();
