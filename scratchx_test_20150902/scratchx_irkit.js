@@ -49,7 +49,6 @@ new (function() {
     ext.getIRCode = function() {
         var url = 'http://'+ip_addr+'/messages';
         $.ajax( url, { crossDomain: true, type: "GET", dataType: 'text',
-                     data: JSON.stringify( ir_data ) ,
           success: function( ir_data ){
             callback( ir_data );
           }
