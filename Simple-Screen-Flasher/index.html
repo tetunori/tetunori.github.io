@@ -1,0 +1,385 @@
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Simple Screen Flasher</title>
+
+        <!-- webapp settings -->
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="red">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+        <!-- favion -->
+        <link rel="icon" href="./images/favicon.ico">
+
+        <style>
+            @import url(http://fonts.googleapis.com/earlyaccess/notosansjp.css);
+            body {
+                overflow: hidden;
+                height:100%;
+                width:100%;
+                margin:0;
+                padding:0;
+                -webkit-background-size: 100%;
+                background-color:whitesmoke;
+                font-family: 'Noto Sans JP', sans-serif;
+            }
+
+            canvas{
+                position:absolute;
+            }
+
+            div.operationText {
+                position:absolute;
+                right: 10px;
+                bottom:10px;
+                font-size: 15px;
+                font-weight: 700;
+                color: rgba( 255, 255, 255, 0.6 );
+                display:none;
+            }
+            div.exitButtonDiv {
+                position:absolute;
+                left: 10px;
+                top:10px;
+                display:none;
+            }
+
+            div.titleScreenWrapper {
+                position:absolute;
+                left:30px;
+                top:15px;
+            }
+            div.titleText {
+                position: relative;;
+                font-size: 40px;
+                font-weight: 700;
+                color: rgba( 0, 0, 0, 1 );
+            }
+            div.descriptionText {
+                position: relative;;
+                font-size: 16px;
+                font-weight: 500;
+                color: rgba( 0, 0, 0, 1 );
+            }
+            div.copyWriteText {
+                position:absolute;
+                left: 10px;
+                bottom:10px;
+                font-size: 12px;
+                font-weight: 500;
+                color: black;
+            }
+            #copyWriteText a { color:black } 
+        </style>
+    </head>
+    <body>
+        <canvas id="flashCanvas" width="1920" height="1080"></canvas>
+        <div id="exitButtonDiv" class="exitButtonDiv">
+            <canvas id="exitButtonCanvas" width="120" height="120"></canvas>
+        </div> 
+        <div id="operationText" class="operationText"> 
+            "S" : Start/Stop, "←" : Color A, "→" : Color B, "X" : Exit 
+        </div>
+        <div id="titleScreenWrapper" class="titleScreenWrapper">
+            <div id="titleText" class="titleText"> 
+                Simple Screen Flasher
+            </div>
+
+            <div id="descriptionText" class="descriptionText"> 
+                <p>補色の関係にある２色で、画面全体を点滅させることのできる、シンプルなツールです。
+                    <br><b>注意</b> : 画面を長時間直視し続けないでください。また、キー操作で高速に点滅させる動作はお控えください。</p>
+                <p>A simple tool that allows you to flash the entire screen with two complementary colors.
+                    <br><b>WARNING</b> : Do NOT keep on looking at the screen for a long time. Please refrain from flashing at high speed by key operation.</p>
+            </div>
+            <br>
+            <canvas id="startButtonCanvas" width="120" height="120"></canvas>
+        </div>
+        <div id="copyWriteText" class="copyWriteText"> 
+            <a href="https://github.com/tetunori/SimpleScreenFlasher">Hosted on GitHub</a>. Version 0.9. Copyright (c) 2019 Tetsunori NAKAYAMA. MIT License.
+        </div>
+
+        <script>
+            const RED_COLOR   = 'rgb( 255,   0,   0)'; // #ff0000
+            const GREEN_COLOR = 'rgb(   0, 169,  51)'; // #00a933
+            const FLASH_CYCLE_TIME_MSEC = 1100;
+            const KEYCODE_ESC   = 27;
+            const KEYCODE_X     = 88;
+            const KEYCODE_S     = 83;
+            const KEYCODE_LEFT  = 37;
+            const KEYCODE_RIGHT = 39;
+
+            window.addEventListener('keydown', (event) => {
+                if ( ( event.keyCode === KEYCODE_X ) || ( event.keyCode === KEYCODE_ESC ) ) {
+                    stopFlashIntervalTimer();
+                    clearFlashCanvas();
+                    transitToTitle();
+                    exitFullScreen();
+                }else if ( event.keyCode === KEYCODE_S ) {
+                    if( flashIntervalTimer === null ){
+                        changeFlashColor();
+                        startFlashIntervalTimer();
+                        transitToFlash();
+                        requestFullScreen();
+                    }else{
+                        stopFlashIntervalTimer();
+                    }
+                }else if ( event.keyCode === KEYCODE_LEFT ) {
+                    stopFlashIntervalTimer();
+                    changeFlashColor( 0 );
+                }else if ( event.keyCode === KEYCODE_RIGHT ) {
+                    stopFlashIntervalTimer();
+                    changeFlashColor( 1 );
+                }
+            });
+
+            let flashColor = ['', ''];
+            flashColor[0] = RED_COLOR;
+            flashColor[1] = GREEN_COLOR;
+            let currentColorIndex = 0; 
+
+            let flashIntervalTimer = null;
+            function startFlashIntervalTimer(){
+                if( flashIntervalTimer === null ){
+                    flashIntervalTimer = setInterval( () => {
+                        changeFlashColor();
+                    }, FLASH_CYCLE_TIME_MSEC );
+                }
+            }
+
+            function changeFlashColor( index ){
+                if( index === undefined ){
+                    // console.log( 'currentColorIndex : ' + currentColorIndex )
+                    if( currentColorIndex === 0 ){
+                        setFlashCanvasColor( flashColor[1] );
+                        currentColorIndex = 1;
+                    }else{
+                        setFlashCanvasColor( flashColor[0] );
+                        currentColorIndex = 0;
+                    }
+                }else{
+                    setFlashCanvasColor( flashColor[index] );
+                    currentColorIndex = index;
+                }
+            }
+
+            function setFlashCanvasColor( color ){
+                var canvas = document.getElementById('flashCanvas');
+                var ctx = canvas.getContext('2d');
+                ctx.fillStyle = color;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            function stopFlashIntervalTimer(){
+                if( flashIntervalTimer !== null ){
+                    clearInterval( flashIntervalTimer );
+                    flashIntervalTimer = null;
+                }
+            }
+            
+            function clearFlashCanvas(){
+                var canvas = document.getElementById('flashCanvas');
+                var ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+
+            (function() {
+                var requestAnimationFrame = window.requestAnimationFrame || 
+            　　　　　　　　　　　　　　　　　　　window.mozRequestAnimationFrame ||
+                                        　window.webkitRequestAnimationFrame || 
+            　　　　　　　　　　　　　　　　　　　window.msRequestAnimationFrame;
+                window.requestAnimationFrame = requestAnimationFrame;
+            })();
+
+            let controlPosition = {x:0, y:0};
+            var CONTROL_EASE = 0.07;
+
+            function drawAnimationStartButton( event ){
+                var canvas = document.getElementById('startButtonCanvas');
+                var ctx = canvas.getContext('2d');
+                // ctx.fillStyle = "rgba(0,0,255,1.0)" ;
+                // ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Base Circle
+                ctx.beginPath();
+                ctx.arc( canvas.width / 2, canvas.width / 2, canvas.width / 2, 
+                            0, 2 * Math.PI, false ) ;
+                ctx.fillStyle = flashColor[0];
+                ctx.fill();
+
+                // 2nd color semi-circle on base circle
+                let x = 0; 
+                let y = 0;
+                if( event !== undefined ){
+                    let rect = event.target.getBoundingClientRect();
+                    x = event.clientX - rect.left;
+                    y = event.clientY - rect.top;
+                }
+                controlPosition.x += (x - controlPosition.x) * CONTROL_EASE;
+                controlPosition.y += (y - controlPosition.y) * CONTROL_EASE;                    
+
+                // For debug
+                // ctx.fillStyle = 'rgb(0,0,0)';
+                // ctx.fillRect(x, y, 10, 10);
+                // let startPointRadian = Math.PI / 2 + Math.atan2( canvas.height / 2 - y, canvas.width / 2 - x );
+                let startPointRadian = Math.PI / 2 + Math.atan2( canvas.height / 2 - controlPosition.y, canvas.width / 2 - controlPosition.x );
+                ctx.beginPath ();
+                ctx.arc( canvas.width / 2, canvas.width / 2, canvas.width / 2, 
+                            startPointRadian, startPointRadian + Math.PI, false ) ;
+                ctx.fillStyle = flashColor[1];
+                ctx.fill();
+                
+                // Round Triangle
+                ctx.beginPath();
+                let unitLength = 28;
+                ctx.moveTo( canvas.width / 2 - unitLength/2, canvas.height / 2 - unitLength*1.732/2 );
+                ctx.lineTo( canvas.width / 2 + unitLength, canvas.height / 2 );
+                ctx.lineTo( canvas.width / 2 - unitLength/2, canvas.height / 2 + unitLength*1.732/2 );
+                ctx.lineTo( canvas.width / 2 - unitLength/2, canvas.height / 2 - unitLength*1.732/2 );
+                ctx.lineTo( canvas.width / 2 + unitLength, canvas.height / 2 );
+                ctx.strokeStyle = 'rgb(245, 245, 245)';
+                ctx.lineWidth = 10;
+                ctx.lineJoin = "round";
+                ctx.stroke();
+                ctx.fillStyle = 'rgb(245, 245, 245)' ;
+                ctx.fill();
+                
+            }
+
+            function drawExitButton(){
+                var canvas = document.getElementById('exitButtonCanvas');
+                var ctx = canvas.getContext('2d');
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Round Triangle
+                ctx.beginPath();
+                let unitLength = 28;
+                ctx.moveTo( canvas.width / 2 + unitLength/2, canvas.height / 2 - unitLength*1.732/2 );
+                ctx.lineTo( canvas.width / 2 - unitLength, canvas.height / 2 );
+                ctx.lineTo( canvas.width / 2 + unitLength/2, canvas.height / 2 + unitLength*1.732/2 );
+                ctx.lineTo( canvas.width / 2 + unitLength/2, canvas.height / 2 - unitLength*1.732/2 );
+                ctx.lineTo( canvas.width / 2 - unitLength, canvas.height / 2 );
+                ctx.strokeStyle = 'rgba(245, 245, 245, 0.4)';
+                ctx.lineWidth = 10;
+                ctx.lineJoin = "round";
+                ctx.stroke();                
+            }
+
+            function drawHilightedExitButton(){
+                var canvas = document.getElementById('exitButtonCanvas');
+                var ctx = canvas.getContext('2d');
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Round Triangle
+                ctx.beginPath();
+                let unitLength = 28;
+                ctx.moveTo( canvas.width / 2 + unitLength/2, canvas.height / 2 - unitLength*1.732/2 );
+                ctx.lineTo( canvas.width / 2 - unitLength, canvas.height / 2 );
+                ctx.lineTo( canvas.width / 2 + unitLength/2, canvas.height / 2 + unitLength*1.732/2 );
+                ctx.lineTo( canvas.width / 2 + unitLength/2, canvas.height / 2 - unitLength*1.732/2 );
+                ctx.lineTo( canvas.width / 2 - unitLength, canvas.height / 2 );
+                ctx.strokeStyle = 'rgb(245, 245, 245)';
+                ctx.lineWidth = 10;
+                ctx.lineJoin = "round";
+                ctx.stroke();
+                // ctx.fillStyle = 'rgb(245, 245, 245)' ;
+                // ctx.fill();             
+            }
+
+            // Reference : https://stackoverflow.com/questions/36672561/how-to-exit-fullscreen-onclick-using-javascript
+            function requestFullScreen(){
+                var isInFullScreen = (document.fullscreenElement && document.fullscreenElement !== null) ||
+                    (document.webkitFullscreenElement && document.webkitFullscreenElement !== null) ||
+                    (document.mozFullScreenElement && document.mozFullScreenElement !== null) ||
+                    (document.msFullscreenElement && document.msFullscreenElement !== null);
+
+                var docElm = document.documentElement;
+                if (!isInFullScreen) {
+                    if (docElm.requestFullscreen) {
+                        docElm.requestFullscreen();
+                    } else if (docElm.mozRequestFullScreen) {
+                        docElm.mozRequestFullScreen();
+                    } else if (docElm.webkitRequestFullScreen) {
+                        docElm.webkitRequestFullScreen();
+                    } else if (docElm.msRequestFullscreen) {
+                        docElm.msRequestFullscreen();
+                    }
+                }
+            }
+
+            function exitFullScreen(){
+                var isInFullScreen = (document.fullscreenElement && document.fullscreenElement !== null) ||
+                    (document.webkitFullscreenElement && document.webkitFullscreenElement !== null) ||
+                    (document.mozFullScreenElement && document.mozFullScreenElement !== null) ||
+                    (document.msFullscreenElement && document.msFullscreenElement !== null);
+
+                var docElm = document.documentElement;
+                if (isInFullScreen) {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    } else if (document.mozCancelFullScreen) {
+                        document.mozCancelFullScreen();
+                    } else if (document.msExitFullscreen) {
+                        document.msExitFullscreen();
+                    }
+                }
+            }
+
+
+            let mousemoveEvent = undefined;
+            function loop(){
+                drawAnimationStartButton( mousemoveEvent );
+                requestAnimationFrame( loop );
+            };
+            loop();
+
+            let startButtonCanvas = document.getElementById('startButtonCanvas');
+            startButtonCanvas.addEventListener('click', () =>{
+                // console.log( 'startButtonCanvas.onClick' );
+                changeFlashColor();
+                startFlashIntervalTimer();
+                transitToFlash();
+                requestFullScreen();
+            }, false);
+            startButtonCanvas.addEventListener('mousemove', (event) =>{
+                mousemoveEvent = event;
+            }, false);
+
+            let exitButtonCanvas = document.getElementById('exitButtonCanvas');
+            exitButtonCanvas.addEventListener('click', () =>{
+                stopFlashIntervalTimer();
+                clearFlashCanvas();
+                transitToTitle();
+                exitFullScreen();
+            }, false);
+            exitButtonCanvas.addEventListener('mouseover', () =>{
+                drawHilightedExitButton();
+            }, false);
+            exitButtonCanvas.addEventListener('mouseout', () =>{
+                drawExitButton();
+            }, false);
+            drawExitButton();
+
+            function transitToTitle(){
+                document.getElementById("titleScreenWrapper").style.display="block";
+                document.getElementById("copyWriteText").style.display="block";
+                document.getElementById("operationText").style.display="none";
+                document.getElementById("exitButtonDiv").style.display="none";
+            }
+
+            function transitToFlash(){
+                document.getElementById("titleScreenWrapper").style.display="none";
+                document.getElementById("copyWriteText").style.display="none";
+                document.getElementById("operationText").style.display="block";
+                document.getElementById("exitButtonDiv").style.display="block";
+            }
+
+            
+        </script>
+    </body>
+</html>
